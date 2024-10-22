@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/formom/static/css/main.7fabc8f7.css",
+    "main.js": "/formom/static/js/main.a408645a.js",
+    "static/js/453.aef53b98.chunk.js": "/formom/static/js/453.aef53b98.chunk.js",
+    "index.html": "/formom/index.html",
+    "main.7fabc8f7.css.map": "/formom/static/css/main.7fabc8f7.css.map",
+    "main.a408645a.js.map": "/formom/static/js/main.a408645a.js.map",
+    "453.aef53b98.chunk.js.map": "/formom/static/js/453.aef53b98.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7fabc8f7.css",
+    "static/js/main.a408645a.js"
+  ]
+}
