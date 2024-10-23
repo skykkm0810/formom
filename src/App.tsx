@@ -2,8 +2,19 @@ import React, { useEffect, useState } from "react";
 import "./App.css";
 import Dialog from "@mui/material/Dialog";
 import axios from "axios";
+import {
+  getDoc,
+  doc,
+  getFirestore,
+  setDoc,
+  addDoc,
+  collection,
+} from "firebase/firestore/lite";
+import { initializeApp } from "firebase/app";
+import { firebaseConfig } from "./firebase";
+
 export interface product {
-  id?: string;
+  id?: number;
   productName: string;
   numbersByDay: {
     mon: number;
@@ -14,7 +25,10 @@ export interface product {
     sat: number;
   };
 }
-
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+const profileRef = doc(db, "data", "allList");
+const docSnap = await getDoc(profileRef);
 function App() {
   const [show, setShow] = useState<number>(0);
   const [modal, setModal] = useState<boolean>(false);
@@ -32,8 +46,7 @@ function App() {
   const [products, setProducts] = useState<Array<product>>();
   // 읽기
   const getProducts = async () => {
-    const response = await axios.get("http://localhost:4000/products");
-    setProducts(response.data);
+    setProducts(docSnap.get("products"));
   };
   useEffect(() => {
     getProducts();
@@ -63,7 +76,7 @@ function App() {
     )[0] as HTMLInputElement;
     const newIndex = Number(products?.slice(-1)[0].id) + 1;
     const newValue: product = {
-      id: newIndex + "",
+      id: newIndex,
       productName: prd_name?.value,
       numbersByDay: {
         mon: Number(mon_number?.value),
@@ -74,20 +87,18 @@ function App() {
         sat: Number(sat_number?.value),
       },
     };
+    products?.push(newValue);
     try {
-      const response = await axios.post(
-        `http://localhost:4000/products`,
-        newValue
+      const docRef = await setDoc(
+        doc(db, "data", "allList"),
+        { products },
+        {
+          merge: true,
+        }
       );
-      if (response.status === 201) {
-        alert("추가되었습니다.");
-        handleClose();
-        getProducts();
-      }
+      window.location.reload();
     } catch (err) {
       console.log(err);
-      alert("에러가 발생했습니다.");
-      handleClose();
     }
   };
   // 변경
@@ -114,6 +125,7 @@ function App() {
       "sat_number"
     )[0] as HTMLInputElement;
     const newValue: product = {
+      id: index,
       productName: prd_name?.value,
       numbersByDay: {
         mon: Number(mon_number?.value),
@@ -124,38 +136,48 @@ function App() {
         sat: Number(sat_number?.value),
       },
     };
-    try {
-      const response = await axios.put(
-        `http://localhost:4000/products/${index}`,
-        newValue
-      );
-      if (response.status === 200) {
+
+    if (products) {
+      var copy = [...products];
+      copy[index] = newValue;
+      console.log(index, copy, copy[index]);
+      try {
+        const docRef = await setDoc(
+          doc(db, "data", "allList"),
+          { products: copy },
+          {
+            merge: true,
+          }
+        );
         alert("변경이 완료되었습니다.");
+        window.location.reload();
+      } catch (err) {
+        console.log(err);
+        alert("에러가 발생했습니다.");
         handleClose();
-        getProducts();
       }
-    } catch (err) {
-      console.log(err);
-      alert("에러가 발생했습니다.");
-      handleClose();
     }
   };
   // 삭제
   const deleteProducts = async () => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:4000/products/${index}`,
-        {}
-      );
-      if (response.status === 200) {
+    if (products) {
+      var copy = [...products];
+      const newArr = copy.filter((list) => list.id !== index);
+      try {
+        const docRef = await setDoc(
+          doc(db, "data", "allList"),
+          { products: newArr },
+          {
+            merge: true,
+          }
+        );
         alert("삭제가 완료되었습니다.");
+        window.location.reload();
+      } catch (err) {
+        console.log(err);
+        alert("에러가 발생했습니다.");
         handleClose();
-        getProducts();
       }
-    } catch (err) {
-      console.log(err);
-      alert("에러가 발생했습니다.");
-      handleClose();
     }
   };
   return (
@@ -178,7 +200,7 @@ function App() {
           제품 별 수량
         </button>
       </div>
-      <div className="flex justify-end px-4">
+      <div className="flex justify-end px-4 max-w-[1440px] mx-auto">
         <button
           onClick={() => {
             var defaultValue: product = {
@@ -219,7 +241,7 @@ function App() {
                   className="border-b border-b-black cursor-pointer hover:bg-slate-100"
                   key={"prd-" + index}
                   onClick={() => {
-                    setIndex(index);
+                    setIndex(Number(list.id));
                     modalHandler(list, 1);
                   }}
                 >
