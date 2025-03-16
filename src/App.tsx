@@ -28,7 +28,6 @@ export interface product {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 const profileRef = doc(db, "data", "allList");
-const docSnap = await getDoc(profileRef);
 function App() {
   const [show, setShow] = useState<number>(0);
   const [modal, setModal] = useState<boolean>(false);
@@ -46,6 +45,7 @@ function App() {
   const [products, setProducts] = useState<Array<product>>();
   // 읽기
   const getProducts = async () => {
+    const docSnap = await getDoc(profileRef);
     setProducts(docSnap.get("products"));
   };
   useEffect(() => {
@@ -138,8 +138,11 @@ function App() {
     };
 
     if (products) {
-      var copy = [...products];
-      copy[index] = newValue;
+      var copy: product[] = [...products];
+      const evenIndex: number = copy.findIndex(
+        (el: product) => el.id === index
+      );
+      copy[evenIndex] = newValue;
       console.log(index, copy, copy[index]);
       try {
         const docRef = await setDoc(
@@ -149,6 +152,7 @@ function App() {
             merge: true,
           }
         );
+        console.log(docRef);
         alert("변경이 완료되었습니다.");
         window.location.reload();
       } catch (err) {
@@ -239,7 +243,7 @@ function App() {
               products.map((list, index) => (
                 <tr
                   className="border-b border-b-black cursor-pointer hover:bg-slate-100"
-                  key={"prd-" + index}
+                  key={"prd-" + index + list.productName}
                   onClick={() => {
                     setIndex(Number(list.id));
                     modalHandler(list, 1);
